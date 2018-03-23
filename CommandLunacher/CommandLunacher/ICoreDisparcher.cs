@@ -11,6 +11,9 @@ namespace CommandLunacher
     /// </summary>
     internal interface ICoreDisparcher:IRevitFunction
     {
+        /// <summary>
+        /// 数据准备
+        /// </summary>
         void PrepareData();
     }
 }

@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace CommandLunacher
 {
+    /// <summary>
+    /// Revit方法接口组
+    /// </summary>
     public interface IRevitFunction:IExternalCommand,IExternalApplication
     {
     }

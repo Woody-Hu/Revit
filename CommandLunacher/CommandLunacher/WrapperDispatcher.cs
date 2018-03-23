@@ -9,7 +9,7 @@ using Autodesk.Revit.DB;
 namespace CommandLunacher
 {
     /// <summary>
-    /// 装饰调度类
+    /// 对外调度类
     /// </summary>
     [Autodesk.Revit.Attributes.TransactionAttribute(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     public class WrapperDispatcher : IRevitFunction

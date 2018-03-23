@@ -12,16 +12,21 @@ using System.Text.RegularExpressions;
 
 namespace CommandLunacher
 {
-    [Autodesk.Revit.Attributes.TransactionAttribute(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     /// <summary>
     /// 命令路由类
     /// </summary>
     internal class CoreDispatcher : ICoreDisparcher
     {
+        #region 静态私有字段
         /// <summary>
         /// 命令映射字典
         /// </summary>
         private static Dictionary<string, HandlerInfoPacker> m_useCMDDic = new Dictionary<string, HandlerInfoPacker>();
+
+        /// <summary>
+        /// 命令类字典
+        /// </summary>
+        private static Dictionary<string, IExternalCommand> m_useCommandObject = new Dictionary<string, IExternalCommand>();
 
         /// <summary>
         /// 启动时执行信息封装
@@ -31,13 +36,10 @@ namespace CommandLunacher
         /// <summary>
         /// 启动时执行类的封装
         /// </summary>
-        private static List<IExternalApplication> m_useLstApp = new List<IExternalApplication>();
+        private static List<IExternalApplication> m_useLstApp = new List<IExternalApplication>(); 
+        #endregion
 
-        /// <summary>
-        /// 执行方法的方法名
-        /// </summary>
-        private const string m_useExecuteMethodName = "Execute";
-
+        #region 常量字符串
         /// <summary>
         /// 程序集路径
         /// </summary>
@@ -57,7 +59,8 @@ namespace CommandLunacher
         /// <summary>
         /// CMD配置文件名称
         /// </summary>
-        private const string CMDXMLFILENAME = @"Com_.+\.xml";
+        private const string CMDXMLFILENAME = @"Com_.+\.xml"; 
+        #endregion
 
 
         /// <summary>
@@ -65,7 +68,6 @@ namespace CommandLunacher
         /// </summary>
         public void PrepareData()
         {
-
             var tempFile = new FileInfo(Assembly.GetExecutingAssembly().Location);
 
             List<HandlerInfoPacker> tempLstCommandInfo = new List<HandlerInfoPacker>();
@@ -95,31 +97,6 @@ namespace CommandLunacher
         }
 
         /// <summary>
-        /// 准备类封装列表
-        /// </summary>
-        /// <param name="useFileName"></param>
-        /// <returns></returns>
-        private List<HandlerInfoPacker> PrepareData(string useFileName)
-        {
-            List<HandlerInfoPacker> lstTempPacker = new List<CommandLunacher.HandlerInfoPacker>();
-
-            XmlDocument useXML = new XmlDocument();
-            useXML.Load(useFileName);
-
-            foreach (XmlNode eachId in useXML.DocumentElement.ChildNodes)
-            {
-                HandlerInfoPacker cmdPacker = new HandlerInfoPacker();
-                cmdPacker.StrUseAddinId = eachId.InnerText;
-                cmdPacker.StrUseAssemblePath = eachId.Attributes[ASSEMBLEPATH].Value;
-                cmdPacker.StrUseClassFullName = eachId.Attributes[CLASSFULLNAME].Value;
-                lstTempPacker.Add(cmdPacker);
-            }
-            return lstTempPacker;
-        }
-
-
-
-        /// <summary>
         /// 命令主入口
         /// </summary>
         /// <param name="commandData"></param>
@@ -130,48 +107,6 @@ namespace CommandLunacher
         {
             return InvokeHandler(commandData, ref message, elements);
         }
-
-        /// <summary>
-        /// 调度处理器
-        /// </summary>
-        /// <param name="commandData"></param>
-        /// <param name="message"></param>
-        /// <param name="elements"></param>
-        /// <returns></returns>
-        private Result InvokeHandler(ExternalCommandData commandData, ref string message, ElementSet elements)
-        {
-            //获取Id
-            var useId = commandData.Application.ActiveAddInId.GetGUID();
-
-            //获取命令对象
-            var useCommandPacker = m_useCMDDic[useId.ToString()];
-
-            object tempCommandObj = CreatObjByHandlerInfo(useCommandPacker);
-
-            //多态转换
-            var tempCommand = tempCommandObj as IExternalCommand;
-
-            return tempCommand.Execute(commandData, ref message, elements);
-        }
-
-        /// <summary>
-        /// 利用处理器信息封装制造对象
-        /// </summary>
-        /// <param name="useCommandPacker"></param>
-        /// <returns></returns>
-        private static object CreatObjByHandlerInfo(HandlerInfoPacker useCommandPacker)
-        {
-            //加载目标程序集
-            var loadedAssembly = AssemblyLoadUtility.LoadAssembly(useCommandPacker.StrUseAssemblePath);
-
-            //获取目标类
-            var useType = loadedAssembly.GetType(useCommandPacker.StrUseClassFullName);
-
-            //调用无参方法创建对象
-            var tempCommandObj = Activator.CreateInstance(useType);
-            return tempCommandObj;
-        }
-
 
         /// <summary>
         /// 启动-顺序启动
@@ -205,5 +140,85 @@ namespace CommandLunacher
 
             return Result.Succeeded;
         }
+
+        #region 私有方法组
+        /// <summary>
+        /// 准备类封装列表
+        /// </summary>
+        /// <param name="useFileName"></param>
+        /// <returns></returns>
+        private List<HandlerInfoPacker> PrepareData(string useFileName)
+        {
+            List<HandlerInfoPacker> lstTempPacker = new List<HandlerInfoPacker>();
+
+            XmlDocument useXML = new XmlDocument();
+            useXML.Load(useFileName);
+
+            foreach (XmlNode eachId in useXML.DocumentElement.ChildNodes)
+            {
+                HandlerInfoPacker cmdPacker = new HandlerInfoPacker();
+                cmdPacker.StrUseAddinId = eachId.InnerText;
+                cmdPacker.StrUseAssemblePath = eachId.Attributes[ASSEMBLEPATH].Value;
+                cmdPacker.StrUseClassFullName = eachId.Attributes[CLASSFULLNAME].Value;
+                lstTempPacker.Add(cmdPacker);
+            }
+            return lstTempPacker;
+        }
+
+        /// <summary>
+        /// 调度处理器
+        /// </summary>
+        /// <param name="commandData"></param>
+        /// <param name="message"></param>
+        /// <param name="elements"></param>
+        /// <returns></returns>
+        private Result InvokeHandler(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            //获取Id
+            var useId = commandData.Application.ActiveAddInId.GetGUID();
+
+            //实际处理器
+            IExternalCommand tempCommand = null;
+
+            //缓存判断
+            if (!m_useCommandObject.ContainsKey(useId.ToString()))
+            {
+                //获取命令对象
+                var useCommandPacker = m_useCMDDic[useId.ToString()];
+
+                object tempCommandObj = CreatObjByHandlerInfo(useCommandPacker);
+
+                //多态转换
+                tempCommand = tempCommandObj as IExternalCommand;
+
+                m_useCommandObject.Add(useId.ToString(), tempCommand);
+            }
+            else
+            {
+                tempCommand = m_useCommandObject[useId.ToString()];
+            }
+
+            return tempCommand.Execute(commandData, ref message, elements);
+
+        }
+
+        /// <summary>
+        /// 利用处理器信息封装制造对象
+        /// </summary>
+        /// <param name="useCommandPacker"></param>
+        /// <returns></returns>
+        private object CreatObjByHandlerInfo(HandlerInfoPacker useCommandPacker)
+        {
+            //加载目标程序集
+            var loadedAssembly = AssemblyLoadUtility.LoadAssembly(useCommandPacker.StrUseAssemblePath);
+
+            //获取目标类
+            var useType = loadedAssembly.GetType(useCommandPacker.StrUseClassFullName);
+
+            //调用无参方法创建对象
+            var tempCommandObj = Activator.CreateInstance(useType);
+            return tempCommandObj;
+        } 
+        #endregion
     }
 }

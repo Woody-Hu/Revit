@@ -11,12 +11,24 @@ namespace CommandLunacher
     /// </summary>
     class HandlerInfoPacker
     {
+        /// <summary>
+        /// 对应的AddinId
+        /// </summary>
         private string m_strUseAddinId;
 
+        /// <summary>
+        /// 对应的程序集路径
+        /// </summary>
         private string m_strUseAssemblePath;
 
+        /// <summary>
+        /// 对应的类全名称
+        /// </summary>
         private string m_strUseClassFullName;
 
+        /// <summary>
+        /// 对应的AddinId
+        /// </summary>
         public string StrUseAddinId
         {
             get
@@ -30,6 +42,9 @@ namespace CommandLunacher
             }
         }
 
+        /// <summary>
+        /// 对应的程序集路径
+        /// </summary>
         public string StrUseAssemblePath
         {
             get
@@ -43,6 +58,9 @@ namespace CommandLunacher
             }
         }
 
+        /// <summary>
+        /// 对应的类全名称
+        /// </summary>
         public string StrUseClassFullName
         {
             get
