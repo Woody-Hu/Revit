@@ -59,7 +59,17 @@ namespace CommandLunacher
         /// <summary>
         /// CMD配置文件名称
         /// </summary>
-        private const string CMDXMLFILENAME = @"Com_.+\.xml"; 
+        private const string CMDXMLFILENAME = @"Com_.+\.xml";
+
+        /// <summary>
+        /// 是否删除xml文件属性名称
+        /// </summary>
+        private const string IFDELETEFILE = "ifDelete";
+
+        /// <summary>
+        /// 要删除的command或application配置文件
+        /// </summary>
+        private List<string> m_lstDeleteFiles = new List<string>();
         #endregion
 
 
@@ -72,6 +82,7 @@ namespace CommandLunacher
 
             List<HandlerInfoPacker> tempLstCommandInfo = new List<HandlerInfoPacker>();
 
+            //获取配置文件
             foreach (var file in tempFile.Directory.GetFiles().ToList())
             {
                 if (Regex.IsMatch(file.Name, CMDXMLFILENAME))
@@ -94,6 +105,18 @@ namespace CommandLunacher
                 m_useLstApp.Add(CreatObjByHandlerInfo(oneAppInfo) as IExternalApplication);
             }
 
+            //删除command或application配置文件 
+            foreach (var eachFile in m_lstDeleteFiles)
+            {
+                try
+                {
+                    File.Delete(eachFile);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
         }
 
         /// <summary>
@@ -115,6 +138,9 @@ namespace CommandLunacher
         /// <returns></returns>
         public Result OnStartup(UIControlledApplication application)
         {
+            //获取版本号
+            AssemblyLoadUtility.m_versionNum = application.ControlledApplication.VersionNumber;
+
             //顺序启动
             foreach (var oneApp in m_useLstApp)
             {
@@ -138,6 +164,9 @@ namespace CommandLunacher
                 m_useLstApp[useIndex].OnShutdown(application);
             }
 
+            //清空版本信息
+            AssemblyLoadUtility.m_versionNum = null;
+
             return Result.Succeeded;
         }
 
@@ -151,11 +180,25 @@ namespace CommandLunacher
         {
             List<HandlerInfoPacker> lstTempPacker = new List<HandlerInfoPacker>();
 
+            //加载配置文件
             XmlDocument useXML = new XmlDocument();
             useXML.Load(useFileName);
 
-            foreach (XmlNode eachId in useXML.DocumentElement.ChildNodes)
+            //添加要删除文件
+            XmlNode root = useXML.DocumentElement;
+            bool bIfDelete = false;
+            bool.TryParse(root.Attributes[IFDELETEFILE].Value, out bIfDelete);
+            if (bIfDelete)
             {
+                m_lstDeleteFiles.Add(useFileName);
+            }
+          
+            //收集处理器信息
+            foreach (XmlNode eachId in root.ChildNodes)
+            {
+
+                m_lstDeleteFiles.Add("");
+
                 HandlerInfoPacker cmdPacker = new HandlerInfoPacker();
                 cmdPacker.StrUseAddinId = eachId.InnerText;
                 cmdPacker.StrUseAssemblePath = eachId.Attributes[ASSEMBLEPATH].Value;
@@ -180,6 +223,9 @@ namespace CommandLunacher
             //实际处理器
             IExternalCommand tempCommand = null;
 
+            //设置addinId
+            DEBUGUtility.SetAddInId(useId.ToString());
+
             //缓存判断
             if (!m_useCommandObject.ContainsKey(useId.ToString()))
             {
@@ -196,6 +242,13 @@ namespace CommandLunacher
             else
             {
                 tempCommand = m_useCommandObject[useId.ToString()];
+            }
+
+            //若是debug模式不单例命令对象
+            if (DEBUGUtility.IfDebugModel)
+            {
+                //清除已缓存命令对象
+                m_useCommandObject.Remove(useId.ToString());
             }
 
             return tempCommand.Execute(commandData, ref message, elements);

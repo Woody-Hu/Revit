@@ -66,6 +66,8 @@ namespace CommandLunacher
         {
             //挂接程序集解析事件
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            //新增Guid
+            DEBUGUtility.CreatGuid();
             try
             {
                 IMethodCallMessage callmessage = (IMethodCallMessage)msg;
@@ -80,6 +82,10 @@ namespace CommandLunacher
             }
             catch (Exception ex)
             {
+                //添加日志信息
+                LogUtility.AppendLog(ex);
+                //生成日志文件
+                LogUtility.CreatLogFile();
                 //异常上抛
                 throw ex;
             }
@@ -87,6 +93,10 @@ namespace CommandLunacher
             {
                 //卸载事件
                 AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
+                //清除guid 
+                DEBUGUtility.DropGuid();
+                //重置状态
+                DEBUGUtility.ResetCondition();
             }
             
         }
