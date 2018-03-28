@@ -9,9 +9,6 @@ using System.Xml;
 
 namespace CommandLunacher
 {
-    /// <summary>
-    /// 程序集加载模块
-    /// </summary>
     internal static class AssemblyLoadUtility
     {
         private static Dictionary<string, Assembly> m_dicPathAssembly = new Dictionary<string, Assembly>();
@@ -39,7 +36,7 @@ namespace CommandLunacher
         /// <summary>
         /// 程序集与文件映射之文件属性名称
         /// </summary>
-        private const string FILEOFMAP = "Flie";
+        private const string FILEOFMAP = "File";
 
         /// <summary>
         /// 分版本程序集名称
@@ -128,7 +125,8 @@ namespace CommandLunacher
             //获得请求程序集
             var wantAssemblyName = inputEventArgs.Name.Split(',')[0];
 
-            FileInfo useFileInfo = new FileInfo(inputEventArgs.RequestingAssembly.Location);
+
+            FileInfo useFileInfo = new FileInfo(DEBUGUtility.ResetApplicationLocation(inputEventArgs.RequestingAssembly.Location));
 
             //文件名转换
             string wantAssemblyFileName = wantAssemblyName;

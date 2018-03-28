@@ -72,6 +72,10 @@ namespace CommandLunacher
         private List<string> m_lstDeleteFiles = new List<string>();
         #endregion
 
+        public int ApplicationCount()
+        {
+            return m_useLstAppInfo.Count;
+        }
 
         /// <summary>
         /// 准备初始数据
@@ -99,15 +103,10 @@ namespace CommandLunacher
             //准备命令字典
             m_useCMDDic = tempLstCommandInfo.ToDictionary(k => k.StrUseAddinId.ToLower(), k => k);
 
-            //创建启动类
-            foreach (var oneAppInfo in m_useLstAppInfo)
-            {
-                m_useLstApp.Add(CreatObjByHandlerInfo(oneAppInfo) as IExternalApplication);
-            }
-
             //删除command或application配置文件 
             foreach (var eachFile in m_lstDeleteFiles)
             {
+                //防止被占用的错误
                 try
                 {
                     File.Delete(eachFile);
@@ -117,6 +116,41 @@ namespace CommandLunacher
                     continue;
                 }
             }
+        }
+
+        /// <summary>
+        /// 准备一个应用封装
+        /// </summary>
+        /// <param name="inputIndex"></param>
+        public void PrepareOneApplication(int inputIndex)
+        {
+            //设置位置
+            DEBUGUtility.SetApplicaionIndex(inputIndex, m_useLstAppInfo[inputIndex].StrUseAssemblePath);
+            m_useLstApp.Add(CreatObjByHandlerInfo(m_useLstAppInfo[inputIndex]) as IExternalApplication);
+        }
+
+        /// <summary>
+        /// 启动一个应用封装
+        /// </summary>
+        /// <param name="inputIndex"></param>
+        /// <param name="inputApplication"></param>
+        public void StartUpOneApplication(int inputIndex, UIControlledApplication inputApplication)
+        {
+            //设置位置
+            DEBUGUtility.SetApplicaionIndex(inputIndex);
+            m_useLstApp[inputIndex].OnStartup(inputApplication);
+        }
+
+        /// <summary>
+        /// 关闭一个应用封装
+        /// </summary>
+        /// <param name="inputIndex"></param>
+        /// <param name="inputApplication"></param>
+        public void ShutDownOneApplication(int inputIndex, UIControlledApplication inputApplication)
+        {
+            //设置位置
+            DEBUGUtility.SetApplicaionIndex(inputIndex);   
+            m_useLstApp[inputIndex].OnShutdown(inputApplication);
         }
 
         /// <summary>
@@ -141,12 +175,6 @@ namespace CommandLunacher
             //获取版本号
             AssemblyLoadUtility.m_versionNum = application.ControlledApplication.VersionNumber;
 
-            //顺序启动
-            foreach (var oneApp in m_useLstApp)
-            {
-                oneApp.OnStartup(application);
-            }
-
             return Result.Succeeded;
 
         }
@@ -158,11 +186,6 @@ namespace CommandLunacher
         /// <returns></returns>
         public Result OnShutdown(UIControlledApplication application)
         {
-
-            for (int useIndex = m_useLstApp.Count - 1; useIndex >= 0; useIndex--)
-            {
-                m_useLstApp[useIndex].OnShutdown(application);
-            }
 
             //清空版本信息
             AssemblyLoadUtility.m_versionNum = null;
@@ -271,7 +294,7 @@ namespace CommandLunacher
             //调用无参方法创建对象
             var tempCommandObj = Activator.CreateInstance(useType);
             return tempCommandObj;
-        } 
+        }
         #endregion
     }
 }

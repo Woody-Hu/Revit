@@ -17,7 +17,7 @@ namespace CommandLunacher
         /// <summary>
         /// 命令核心分发器
         /// </summary>
-        private IRevitFunction m_useCoreDispatcher;
+        private ICoreDisparcher m_useCoreDispatcher;
 
         /// <summary>
         /// 构造方法
@@ -36,12 +36,30 @@ namespace CommandLunacher
 
         public Result OnShutdown(UIControlledApplication application)
         {
+            var applicationCount = m_useCoreDispatcher.ApplicationCount();
+
+            //循环关闭
+            for (int tempIndex = applicationCount - 1; tempIndex >= 0 ; tempIndex--)
+            {
+                m_useCoreDispatcher.ShutDownOneApplication(tempIndex, application);
+            }
+
             return m_useCoreDispatcher.OnShutdown(application);
         }
 
         public Result OnStartup(UIControlledApplication application)
         {
-            return m_useCoreDispatcher.OnStartup(application);
+            var returnValue = m_useCoreDispatcher.OnStartup(application);
+
+            var applicationCount = m_useCoreDispatcher.ApplicationCount();
+
+            //循环启动
+            for (int tempIndex = 0; tempIndex < applicationCount; tempIndex++)
+            {
+                m_useCoreDispatcher.StartUpOneApplication(tempIndex, application);
+            }
+
+            return returnValue;
         }
     }
 }

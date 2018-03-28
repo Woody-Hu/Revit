@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.Revit.UI;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace CommandLunacher
     /// </summary>
     internal static class DEBUGUtility
     {
+        #region 私有变量
         /// <summary>
         /// Debug模式标签
         /// </summary>
@@ -52,6 +54,21 @@ namespace CommandLunacher
         private static Dictionary<string, Guid?> m_usedAddinIdAndGuidDic = new Dictionary<string, Guid?>();
 
         /// <summary>
+        /// 已使用的Application索引与Guid映射
+        /// </summary>
+        private static Dictionary<int, Guid?> m_useApplicationIdAndGuidDic = new Dictionary<int, Guid?>();
+
+        /// <summary>
+        /// Application及其对应的路径列表
+        /// </summary>
+        private static Dictionary<int, string> m_useApplicationIdAndPathDic = new Dictionary<int, string>();
+
+        /// <summary>
+        /// 当前的Application索引
+        /// </summary>
+        private static int? m_nowApplicationIndex = null;
+
+        /// <summary>
         /// 当前使用的临时目录对象
         /// </summary>
         private static DirectoryInfo nowUseTempDirectory = null;
@@ -84,12 +101,13 @@ namespace CommandLunacher
         /// <summary>
         /// 必要文件节点名称
         /// </summary>
-        private const string NEEDCOPYFILE= "NeedCopyFile";
+        private const string NEEDCOPYFILE = "NeedCopyFile";
 
         /// <summary>
         /// 保存计数节点名称
         /// </summary>
-        private const string SAVELEVEL = "SaveParentLevel";
+        private const string SAVELEVEL = "SaveParentLevel"; 
+        #endregion
 
         /// <summary>
         /// 底层是否是Debug模式
@@ -112,63 +130,17 @@ namespace CommandLunacher
 
             if (m_ifDebugModel)
             {
-                //清除上次的临时目录
-                RemoveLastTemp();
-            }
-        }
-
-        /// <summary>
-        /// 获取配置文件信息
-        /// </summary>
-        /// <param name="bIfDebug">是否时debug模式</param>
-        /// <param name="lstNeedCopyFile">需拷贝的文件列表</param>
-        static void GetSettingInfo(out bool bIfDebug, out int nSaveLevel, out List<Regex> lstNeedCopyFile)
-        {
-            bIfDebug = false ;
-            nSaveLevel = 0;
-            lstNeedCopyFile = new List<Regex>();
-            //获取配置文件目录
-            string strPath = Assembly.GetExecutingAssembly().Location;
-            string strUsePath = new FileInfo(strPath).Directory + @"\" + SETTINGFILE;
-
-            //加载配置文件
-            if (File.Exists(strUsePath))
-            {
                 try
                 {
-                    XmlDocument settingDoc = new XmlDocument();
-                    settingDoc.Load(strUsePath);
-
-                    XmlElement root = settingDoc.DocumentElement;
-
-                    foreach (XmlNode eachNode in root)
-                    {
-                        //获取debug模式
-                        if (eachNode.Name.Equals(DEBUGMODEL))
-                        {
-                            bool.TryParse(eachNode.InnerText, out bIfDebug);
-                        }
-                        //获取保存级数
-                        else if (eachNode.Name.Equals(SAVELEVEL))
-                        {
-                            int.TryParse(eachNode.InnerText, out nSaveLevel);
-                        }
-                        //获取必要文件
-                        else if (eachNode.Name.Equals(NEEDCOPYFILE))
-                        {
-                            Regex tempRegex = new Regex(eachNode.InnerText);
-                            lstNeedCopyFile.Add(tempRegex);
-                        }
-                    }
+                    //清除上次的临时目录
+                    RemoveLastTemp();
                 }
                 catch (Exception)
                 {
-                    bIfDebug = false;
-                    nSaveLevel = 0;
-                    lstNeedCopyFile.Clear();                 
+                    ;
                 }
-
-            }           
+                
+            }
         }
 
         /// <summary>
@@ -209,6 +181,7 @@ namespace CommandLunacher
             nowUseSourceDirectory = null;
             nowUseSourceRootDirectory = null;
             nowUseAssemblyDirectory = null;
+            m_nowApplicationIndex = null;
         }
 
         /// <summary>
@@ -310,6 +283,53 @@ namespace CommandLunacher
         }
 
         /// <summary>
+        /// 变更或添加索引记录
+        /// </summary>
+        /// <param name="inputIndex"></param>
+        /// <param name="inputPath"></param>
+        internal static void SetApplicaionIndex(int inputIndex,string inputPath = null)
+        {
+            m_nowApplicationIndex = inputIndex;
+
+            if (m_useApplicationIdAndGuidDic.ContainsKey(inputIndex))
+            {
+                m_nowGuid = m_useApplicationIdAndGuidDic[inputIndex];
+            }
+            else
+            {
+                m_useApplicationIdAndGuidDic.Add(inputIndex, m_nowGuid);
+            }
+
+            //添加到记录
+            if (!string.IsNullOrWhiteSpace(inputPath) && !m_useApplicationIdAndPathDic.ContainsKey(inputIndex))
+            {
+                m_useApplicationIdAndPathDic.Add(inputIndex, inputPath);
+            }
+        }
+
+        /// <summary>
+        /// 重设应用位置
+        /// </summary>
+        /// <param name="inputString"></param>
+        /// <returns></returns>
+        internal static string ResetApplicationLocation(string inputString)
+        {
+            //非Debug模式 或 没有当前Application索引 不处理
+            if (!m_ifDebugModel || null == m_nowApplicationIndex 
+                || !m_useApplicationIdAndPathDic.ContainsKey(m_nowApplicationIndex.Value))
+            {
+                return inputString;
+            }
+            else
+            {
+                var returnValue = m_useApplicationIdAndPathDic[m_nowApplicationIndex.Value];
+                m_nowApplicationIndex = null;
+                return returnValue;
+            }
+        }
+
+        #region 私有方法
+        /// <summary>
         /// 寻找使用的根位置
         /// </summary>
         /// <param name="saveParentLevel"></param>
@@ -340,7 +360,7 @@ namespace CommandLunacher
                     parentDirectory = parentDirectory.Parent;
                 }
             }
-            
+
         }
 
         /// <summary>
@@ -354,7 +374,7 @@ namespace CommandLunacher
         {
             //输入的文件信息
             var inputFileInfo = new FileInfo(inputPath);
-  
+
             //输入的文件信息父菜单
             parentDirectory = null != nowUseSourceDirectory ? nowUseSourceDirectory : inputFileInfo.Directory;
             //使用的文件名字符串
@@ -380,7 +400,7 @@ namespace CommandLunacher
         /// <param name="inputSourceInfo"></param>
         /// <param name="inputTargetInfo"></param>
         /// <param name="useRegex"></param>
-        private static void MultipleCopy(DirectoryInfo inputSourceInfo,DirectoryInfo inputTargetInfo, List<Regex> useRegex)
+        private static void MultipleCopy(DirectoryInfo inputSourceInfo, DirectoryInfo inputTargetInfo, List<Regex> useRegex)
         {
             //文件拷贝
             foreach (var oneFileInfo in inputSourceInfo.GetFiles())
@@ -448,5 +468,60 @@ namespace CommandLunacher
                 oneDirectories.Delete(true);
             }
         }
+
+        /// <summary>
+        /// 获取配置文件信息
+        /// </summary>
+        /// <param name="bIfDebug">是否时debug模式</param>
+        /// <param name="lstNeedCopyFile">需拷贝的文件列表</param>
+        private static void GetSettingInfo(out bool bIfDebug, out int nSaveLevel, out List<Regex> lstNeedCopyFile)
+        {
+            bIfDebug = false;
+            nSaveLevel = 0;
+            lstNeedCopyFile = new List<Regex>();
+            //获取配置文件目录
+            string strPath = Assembly.GetExecutingAssembly().Location;
+            string strUsePath = new FileInfo(strPath).Directory + @"\" + SETTINGFILE;
+
+            //加载配置文件
+            if (File.Exists(strUsePath))
+            {
+                try
+                {
+                    XmlDocument settingDoc = new XmlDocument();
+                    settingDoc.Load(strUsePath);
+
+                    XmlElement root = settingDoc.DocumentElement;
+
+                    foreach (XmlNode eachNode in root)
+                    {
+                        //获取debug模式
+                        if (eachNode.Name.Equals(DEBUGMODEL))
+                        {
+                            bool.TryParse(eachNode.InnerText, out bIfDebug);
+                        }
+                        //获取保存级数
+                        else if (eachNode.Name.Equals(SAVELEVEL))
+                        {
+                            int.TryParse(eachNode.InnerText, out nSaveLevel);
+                        }
+                        //获取必要文件
+                        else if (eachNode.Name.Equals(NEEDCOPYFILE))
+                        {
+                            Regex tempRegex = new Regex(eachNode.InnerText);
+                            lstNeedCopyFile.Add(tempRegex);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    bIfDebug = false;
+                    nSaveLevel = 0;
+                    lstNeedCopyFile.Clear();
+                }
+
+            }
+        } 
+        #endregion
     }
 }

@@ -42,7 +42,7 @@ namespace CommandLunacher
         /// 单例模式获得器 饿汉模式
         /// </summary>
         /// <returns></returns>
-        internal static IRevitFunction GetRevitFunction()
+        internal static ICoreDisparcher GetRevitFunction()
         {
             if (null == m_signalTag || null == m_signalTag.m_AOPResult)
             {
@@ -51,6 +51,15 @@ namespace CommandLunacher
                 m_signalTag.m_AOPResult = (ICoreDisparcher)m_signalTag.GetTransparentProxy();
                 //准备数据
                 m_signalTag.m_AOPResult.PrepareData();
+
+                //获取应用数量
+                int appCount = m_signalTag.m_AOPResult.ApplicationCount();
+
+                //循环准备
+                for (int tempIndex = 0; tempIndex < appCount; tempIndex++)
+                {
+                    m_signalTag.m_AOPResult.PrepareOneApplication(tempIndex);
+                }
             }
 
             return m_signalTag.m_AOPResult;
