@@ -219,9 +219,6 @@ namespace CommandLunacher
             //收集处理器信息
             foreach (XmlNode eachId in root.ChildNodes)
             {
-
-                m_lstDeleteFiles.Add("");
-
                 HandlerInfoPacker cmdPacker = new HandlerInfoPacker();
                 cmdPacker.StrUseAddinId = eachId.InnerText;
                 cmdPacker.StrUseAssemblePath = eachId.Attributes[ASSEMBLEPATH].Value;
