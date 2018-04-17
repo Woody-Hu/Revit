@@ -34,6 +34,12 @@ namespace CommandLunacher
             return m_useCoreDispatcher.Execute(commandData, ref message, elements);
         }
 
+        public Result ExecuteByAppendValue(ExternalCommandData commandData, ref string message, ElementSet elements
+            , string useGuid, string useAssemblyLocation, string useClassFullName)
+        {
+            return m_useCoreDispatcher.ExecuteByAppendValue(commandData, ref message, elements, useGuid, useAssemblyLocation, useClassFullName);
+        }
+
         public Result OnShutdown(UIControlledApplication application)
         {
             var applicationCount = m_useCoreDispatcher.ApplicationCount();

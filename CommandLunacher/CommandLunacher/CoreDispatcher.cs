@@ -166,6 +166,33 @@ namespace CommandLunacher
         }
 
         /// <summary>
+        /// 扩展机制扩展入口
+        /// </summary>
+        /// <param name="commandData"></param>
+        /// <param name="message"></param>
+        /// <param name="elements"></param>
+        /// <param name="useGuid"></param>
+        /// <param name="useAssemblyLocation"></param>
+        /// <param name="useClassFullName"></param>
+        /// <returns></returns>
+        public Result ExecuteByAppendValue(ExternalCommandData commandData, ref string message, ElementSet elements
+            , string useGuid, string useAssemblyLocation, string useClassFullName)
+        {
+            //检查命令是否被创建
+            if (!m_useCMDDic.ContainsKey(useGuid))
+            {
+                HandlerInfoPacker tempUsePakcer = new HandlerInfoPacker();
+                tempUsePakcer.StrUseAddinId = useGuid;
+                tempUsePakcer.StrUseAssemblePath = useAssemblyLocation;
+                tempUsePakcer.StrUseClassFullName = useClassFullName;
+                m_useCMDDic.Add(useGuid, tempUsePakcer);
+            }
+
+            //由id执行命令
+            return InvokeById(commandData, ref message, elements, useGuid);
+        }
+
+        /// <summary>
         /// 启动-顺序启动
         /// </summary>
         /// <param name="application"></param>
@@ -239,40 +266,53 @@ namespace CommandLunacher
         {
             //获取Id
             var useId = commandData.Application.ActiveAddInId.GetGUID();
+            var strUseId = useId.ToString();
 
+            return InvokeById(commandData, ref message, elements, strUseId);
+        }
+
+        /// <summary>
+        /// 由Id唤醒方法
+        /// </summary>
+        /// <param name="commandData"></param>
+        /// <param name="message"></param>
+        /// <param name="elements"></param>
+        /// <param name="strUseId"></param>
+        /// <returns></returns>
+        private Result InvokeById(ExternalCommandData commandData, ref string message, ElementSet elements, string strUseId)
+        {
             //实际处理器
             IExternalCommand tempCommand = null;
 
             //设置addinId
-            DEBUGUtility.SetAddInId(useId.ToString());
+            DEBUGUtility.SetAddInId(strUseId);
 
             //缓存判断
-            if (!m_useCommandObject.ContainsKey(useId.ToString()))
+            if (!m_useCommandObject.ContainsKey(strUseId))
             {
                 //获取命令对象
-                var useCommandPacker = m_useCMDDic[useId.ToString()];
+                var useCommandPacker = m_useCMDDic[strUseId];
 
                 object tempCommandObj = CreatObjByHandlerInfo(useCommandPacker);
 
                 //多态转换
                 tempCommand = tempCommandObj as IExternalCommand;
 
-                m_useCommandObject.Add(useId.ToString(), tempCommand);
+                m_useCommandObject.Add(strUseId, tempCommand);
             }
             else
             {
-                tempCommand = m_useCommandObject[useId.ToString()];
+                tempCommand = m_useCommandObject[strUseId];
             }
 
             //若是debug模式不单例命令对象
             if (DEBUGUtility.IfDebugModel)
             {
                 //清除已缓存命令对象
-                m_useCommandObject.Remove(useId.ToString());
+                m_useCommandObject.Remove(strUseId);
             }
 
             return tempCommand.Execute(commandData, ref message, elements);
-
         }
 
         /// <summary>
