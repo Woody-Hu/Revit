@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -32,10 +33,14 @@ namespace EmitUtility
             }
 
             AssemblyRespondBean respond = new AssemblyRespondBean();
-            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName);
+
+            string outPutLocation;
+            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName, out outPutLocation, inputRequest.UseLocation);
+
             var tempModuleBuilder = GetModuleBuilder(tempAssemblyBuilder, inputRequest.AssemblyName);
 
             //数据回写
+            respond.UseAssemblyDir = outPutLocation;
             respond.UseAssembuilder = tempAssemblyBuilder;
             respond.UseModuleBuilder = tempModuleBuilder;
             respond.LstClassBean = new List<ClassBuilderBean>();
@@ -82,13 +87,29 @@ namespace EmitUtility
         /// </summary>
         /// <param name="inputName"></param>
         /// <returns></returns>
-        private AssemblyBuilder GetAssemblyBuilder(string inputName)
+        private AssemblyBuilder GetAssemblyBuilder(string inputName, out string outPutLocation, string inputLocation = null)
         {
+            outPutLocation = null;
+
             AssemblyName useAssemblyName = new AssemblyName(inputName);
 
             AppDomain useAppDomain = AppDomain.CurrentDomain;
 
-            return useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave);
+            string useLocation = inputLocation;
+
+            //获得当前路径
+            if (string.IsNullOrWhiteSpace(useLocation))
+            {
+                Assembly nowAssembly = Assembly.GetExecutingAssembly();
+
+                FileInfo useFileInfo = new FileInfo(nowAssembly.Location);
+
+                useLocation = useFileInfo.Directory.FullName;
+            }
+
+            outPutLocation = useLocation;
+
+            return useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave, useLocation);
         }
 
         /// <summary>

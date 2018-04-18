@@ -18,6 +18,11 @@ namespace EmitUtility
         internal string UseAssemblyName { set; get; }
 
         /// <summary>
+        /// 输出程序集的路径
+        /// </summary>
+        public string UseAssemblyDir { internal set; get; }
+
+        /// <summary>
         /// 程序集创建器
         /// </summary>
         public AssemblyBuilder UseAssembuilder { get; internal set; }

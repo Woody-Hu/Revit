@@ -17,6 +17,11 @@ namespace EmitUtility
         public string AssemblyName { set; get; }
 
         /// <summary>
+        /// 使用的生成文件夹路径
+        /// </summary>
+        public string UseLocation { set; get; }
+
+        /// <summary>
         /// 使用的类型创建请求列表
         /// </summary>
         public List<TypeMakeRequest> LstUseTypeMakeRequest { set; get; }
