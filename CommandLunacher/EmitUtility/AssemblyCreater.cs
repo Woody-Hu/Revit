@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Diagnostics.DebuggableAttribute;
 
 namespace EmitUtility
 {
@@ -26,6 +31,7 @@ namespace EmitUtility
         /// <returns></returns>
         public AssemblyRespondBean CreatOneAssembly(AssemblyMakeRequest inputRequest)
         {
+
             //列表保护
             if (null == inputRequest.LstUseTypeMakeRequest)
             {
@@ -33,14 +39,11 @@ namespace EmitUtility
             }
 
             AssemblyRespondBean respond = new AssemblyRespondBean();
-
-            string outPutLocation;
-            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName, out outPutLocation, inputRequest.UseLocation);
+            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName);
 
             var tempModuleBuilder = GetModuleBuilder(tempAssemblyBuilder, inputRequest.AssemblyName);
 
             //数据回写
-            respond.UseAssemblyDir = outPutLocation;
             respond.UseAssembuilder = tempAssemblyBuilder;
             respond.UseModuleBuilder = tempModuleBuilder;
             respond.LstClassBean = new List<ClassBuilderBean>();
@@ -81,35 +84,30 @@ namespace EmitUtility
 
         }
 
+
         #region 私有方法
         /// <summary>
         /// 创建一个AssemblyBuilder
         /// </summary>
         /// <param name="inputName"></param>
         /// <returns></returns>
-        private AssemblyBuilder GetAssemblyBuilder(string inputName, out string outPutLocation, string inputLocation = null)
+        private AssemblyBuilder GetAssemblyBuilder(string inputName)
         {
-            outPutLocation = null;
 
             AssemblyName useAssemblyName = new AssemblyName(inputName);
 
             AppDomain useAppDomain = AppDomain.CurrentDomain;
 
-            string useLocation = inputLocation;
+            Assembly nowAssembly = Assembly.GetExecutingAssembly();
 
-            //获得当前路径
-            if (string.IsNullOrWhiteSpace(useLocation))
-            {
-                Assembly nowAssembly = Assembly.GetExecutingAssembly();
+            FileInfo useFileInfo = new FileInfo(nowAssembly.Location);
 
-                FileInfo useFileInfo = new FileInfo(nowAssembly.Location);
 
-                useLocation = useFileInfo.Directory.FullName;
-            }
+            var tempBuilder = useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave,
+                useFileInfo.Directory.FullName);
 
-            outPutLocation = useLocation;
+            return tempBuilder;
 
-            return useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave, useLocation);
         }
 
         /// <summary>
@@ -120,7 +118,7 @@ namespace EmitUtility
         /// <returns></returns>
         private ModuleBuilder GetModuleBuilder(AssemblyBuilder inputAssemblyBuilder, string inputName)
         {
-            return inputAssemblyBuilder.DefineDynamicModule(inputName, inputName + m_strUseDllAppend);
+            return inputAssemblyBuilder.DefineDynamicModule(inputName + m_strUseDllAppend, inputName + m_strUseDllAppend);
         }
 
         /// <summary>
@@ -204,7 +202,7 @@ namespace EmitUtility
         {
             var tempUseTypeBuilder = inputClassBuilderBean.UseTypeBuilder;
 
-            var tempMethodBuilder = tempUseTypeBuilder.DefineMethod(inputRequest.Name,  MethodAttributes.Public | MethodAttributes.Virtual,
+            var tempMethodBuilder = tempUseTypeBuilder.DefineMethod(inputRequest.Name,  MethodAttributes.Public|MethodAttributes.Virtual,
                 inputRequest.ReturnType, inputRequest.ParameterTypes);
 
             inputRequest.UseMethodDel(tempMethodBuilder, inputClassBuilderBean);

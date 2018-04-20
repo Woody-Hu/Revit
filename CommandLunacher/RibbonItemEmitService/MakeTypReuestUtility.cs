@@ -1,5 +1,7 @@
 ﻿
+using Autodesk.Revit.Attributes;
 using EmitUtility;
+using InvokeUtility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -38,20 +40,22 @@ namespace RibbonItemEmitService
         private const string m_strUseCoreLocation = "UseCoreLocation";
 
         /// <summary>
-        /// 使用的框架方法名称
-        /// </summary>
-        private const string m_strUseCoreMethodName = "ExecuteByAppendValue";
-
-        /// <summary>
         /// 使用的接口名称
         /// </summary>
         private const string m_strInterfaceMethodName = "Execute";
 
         /// <summary>
-        /// 使用的框架类全名称
+        /// 辅助方法的方法名
         /// </summary>
-        private const string m_strUseCoreFullClassName = "CommandLunacher.WrapperDispatcher"; 
+        private const string m_strHelpMethodName = "HelpInvoke";
+
+        /// <summary>
+        /// 添加方法的方法名
+        /// </summary>
+        private const string m_strAddMethodName = "Add";
         #endregion
+
+        #region 私有字段
 
         /// <summary>
         /// 字段请求列表
@@ -70,117 +74,44 @@ namespace RibbonItemEmitService
         private List<Type> m_lstInterfaceType;
 
         /// <summary>
+        /// 使用的基础类
+        /// </summary>
+        private Type m_baseType = null;
+
+        /// <summary>
         /// 方法请求列表
         /// </summary>
         private List<MethodRequest> m_lstMethodRequest;
 
         /// <summary>
-        /// APIUI 文件路径
+        /// 使用类的全名称
         /// </summary>
-        private string m_APIUILocation;
-
-        /// <summary>
-        /// API 文件路径
-        /// </summary>
-        private string m_APILocation;
-
-        /// <summary>
-        /// (利用反射）构造方法
-        /// </summary>
-        internal MakeTypReuestUtility( string inputAPIUILocation,string inputAPILocation)
+        internal static string FullClassName
         {
-            m_APIUILocation = inputAPIUILocation;
-            m_APILocation = inputAPILocation;
-
-            AppDomain.CurrentDomain.AssemblyResolve += Use_AssemblyResolve;
-
-            //Api程序集
-            Assembly apiAssembly = Assembly.LoadFile(m_APILocation);
-
-            //api程序集
-            Assembly apiUIAssembly = Assembly.LoadFile(m_APIUILocation);
-
-            //获取IExternalCommand类型
-            Type iExternalCommandType = apiUIAssembly.GetType("Autodesk.Revit.UI.IExternalCommand");
-
-            Type attributeType = apiAssembly.GetType("Autodesk.Revit.Attributes.TransactionAttribute");
-
-            Type transactionModeType = apiAssembly.GetType("Autodesk.Revit.Attributes.TransactionMode");
-
-            object useTransactionMode = Enum.Parse(transactionModeType, "Manual");
-
-            PrepareType(iExternalCommandType, attributeType, transactionModeType, useTransactionMode);
-
-            AppDomain.CurrentDomain.AssemblyResolve -= Use_AssemblyResolve;
+            get
+            {
+                return m_strFullClassName;
+            }
         }
+
+        /// <summary>
+        /// 使用类的位置
+        /// </summary>
+        internal static string UseLocation
+        {
+            get
+            {
+                return m_strUseLocation;
+            }
+        }
+        #endregion
 
         /// <summary>
         /// 构造方法
         /// </summary>
         internal MakeTypReuestUtility()
         {
-
-            //获取IExternalCommand类型
-            Type iExternalCommandType = typeof(Autodesk.Revit.UI.IExternalCommand);
-
-            Type attributeType = typeof(Autodesk.Revit.Attributes.TransactionAttribute);
-
-            Type transactionModeType = typeof(Autodesk.Revit.Attributes.TransactionMode);
-
-            object useTransactionMode = Autodesk.Revit.Attributes.TransactionMode.Manual;
-
-            PrepareType(iExternalCommandType, attributeType, transactionModeType, useTransactionMode);
-
-        }
-
-        private void PrepareType(Type iExternalCommandType, Type attributeType, Type transactionModeType, object useTransactionMode)
-        {
-            //初始化字段请求
-            m_lstDefualtFiled = new List<FiledMakeRequest>();
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strId });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strFullClassName });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strUseLocation });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strUseCoreLocation });
-
-            //初始化特性请求
-            m_lstUseAttribute = new List<CustomAttributeBuilder>();
-
-            //使用的特性构造方法
-            var useAttributeConstr = attributeType.GetConstructor(new Type[] { transactionModeType });
-
-            m_lstUseAttribute.Add(new CustomAttributeBuilder(useAttributeConstr, new object[] { useTransactionMode }));
-
-            //准备接口类型列表
-            m_lstInterfaceType = new List<Type>();
-            m_lstInterfaceType.Add(iExternalCommandType);
-
-
-            m_lstMethodRequest = new List<MethodRequest>();
-
-            //接口方法
-            MethodInfo useInterfaceMethodInfo = iExternalCommandType.GetMethod(m_strInterfaceMethodName);
-
-            MethodRequest tempMethodRequest = new MethodRequest();
-            tempMethodRequest.Name = m_strInterfaceMethodName;
-            tempMethodRequest.ReturnType = useInterfaceMethodInfo.ReturnType;
-
-            tempMethodRequest.ParameterTypes = (from n in useInterfaceMethodInfo.GetParameters() select n.ParameterType).ToArray();
-            tempMethodRequest.UseBaseMethod = useInterfaceMethodInfo;
-            tempMethodRequest.UseMethodDel = new MethodCreatDel(UseReflectMethodCreated);
-
-            m_lstMethodRequest.Add(tempMethodRequest);
-            
-        }
-
-        private Assembly Use_AssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            var useAssemblyName = args.Name.Split(',')[0];
-
-            FileInfo useFileInfo = new FileInfo(args.RequestingAssembly.Location);
-
-            string usePath = useFileInfo.Directory + @"\" + useAssemblyName + ".dll";
-
-            return Assembly.LoadFile(usePath);
+            PrepareType();
         }
 
         /// <summary>
@@ -196,6 +127,8 @@ namespace RibbonItemEmitService
             TypeMakeRequest returnValue = new TypeMakeRequest();
 
             returnValue.TypeName = inputTypeName;
+
+            returnValue.ParentType = m_baseType;
 
             returnValue.LstFiled = m_lstDefualtFiled;
 
@@ -220,114 +153,117 @@ namespace RibbonItemEmitService
         /// <param name="useClassBuilderBean"></param>
         private void UseReflectMethodCreated(MethodBuilder inputMethodBuilder, ClassBuilderBean useClassBuilderBean)
         {
+            //获得辅助方法
+            MethodInfo useMethod = typeof(InvokeTool).GetMethod(m_strHelpMethodName);
+
             //框架位置
             var useCoreLocationFileBuilder = useClassBuilderBean.UseFiledDic[m_strUseCoreLocation];
 
             //使用类的全名称
-            var useFullNameBuilder = useClassBuilderBean.UseFiledDic[m_strFullClassName];
+            var useFullNameBuilder = useClassBuilderBean.UseFiledDic[FullClassName];
 
             //使用类的路径
-            var useClassLocationBuilder = useClassBuilderBean.UseFiledDic[m_strUseLocation];
+            var useClassLocationBuilder = useClassBuilderBean.UseFiledDic[UseLocation];
 
             //使用的Id
             var useIdBuilder = useClassBuilderBean.UseFiledDic[m_strId];
 
-            //获得使用的il
+            //获取中间码
             var useIl = inputMethodBuilder.GetILGenerator();
 
+            //获取添加方法
+            var useAddMehtod = typeof(List<object>).GetMethod(m_strAddMethodName);
 
-            var useLocalAssembly = useIl.DeclareLocal(typeof(Assembly));
-            var useLocalType = useIl.DeclareLocal(typeof(Type));
-            var useLocalInstance = useIl.DeclareLocal(typeof(object));
-            var useLocalMethodName = useIl.DeclareLocal(typeof(string));
-            var useLocalMethodInfo = useIl.DeclareLocal(typeof(MethodInfo));
             var useLocalLstObj = useIl.DeclareLocal(typeof(List<object>));
-            var useLocalArrayObj = useIl.DeclareLocal(typeof(object[]));
-
-            //获得目标位置处的Assembly
-            useIl.Emit(OpCodes.Ldarg_0);
-            useIl.Emit(OpCodes.Ldfld, useCoreLocationFileBuilder);
-            var useLoadFileMethod = typeof(Assembly).GetMethod("LoadFile", new Type[] { typeof(string) });
-            useIl.Emit(OpCodes.Call, useLoadFileMethod);
-            useIl.Emit(OpCodes.Stloc, useLocalAssembly);
-            useIl.Emit(OpCodes.Ldloc, useLocalAssembly);
-
-            //获得目标type
-            useIl.Emit(OpCodes.Ldstr, m_strUseCoreFullClassName);
-            var useLoadTypeMethod = typeof(Assembly).GetMethod("GetType", new Type[] { typeof(string) });
-            useIl.Emit(OpCodes.Call, useLoadTypeMethod);
-            useIl.Emit(OpCodes.Stloc, useLocalType);
-
-            //获得目标MehtodInfo
-            useIl.Emit(OpCodes.Ldloc, useLocalType);
-            useIl.Emit(OpCodes.Ldstr, m_strUseCoreMethodName);
-            var useFindMethod = typeof(Type).GetMethod("GetMethod", new Type[] { typeof(string) });
-            useIl.Emit(OpCodes.Call, useFindMethod);
-            useIl.Emit(OpCodes.Stloc, useLocalMethodInfo);
-
-            //创建对象实例
-            useIl.Emit(OpCodes.Ldloc, useLocalType);
-            var useCreatInstanceMethod = typeof(Activator).GetMethod("CreateInstance", new Type[] { typeof(Type) });
-            useIl.Emit(OpCodes.Call, useCreatInstanceMethod);
-            useIl.Emit(OpCodes.Stloc, useLocalInstance);
-
-            //创建List<object>
             useIl.Emit(OpCodes.Newobj, typeof(List<object>).GetConstructor(new Type[] { }));
             useIl.Emit(OpCodes.Stloc, useLocalLstObj);
 
-
-            //获取添加方法
-            var useAddMehtod = typeof(List<object>).GetMethod("Add");
-
-            //添加ExternalCommandData
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
             useIl.Emit(OpCodes.Ldarg_1);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //添加message
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
-            useIl.Emit(OpCodes.Ldstr,string.Empty);
+            useIl.Emit(OpCodes.Ldstr, string.Empty);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //ElementSet
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
             useIl.Emit(OpCodes.Ldarg_3);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //添加Guid
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
             useIl.Emit(OpCodes.Ldarg_0);
             useIl.Emit(OpCodes.Ldfld, useIdBuilder);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //添加类路径
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
             useIl.Emit(OpCodes.Ldarg_0);
             useIl.Emit(OpCodes.Ldfld, useClassLocationBuilder);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-
-            //添加类全名称
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
             useIl.Emit(OpCodes.Ldarg_0);
             useIl.Emit(OpCodes.Ldfld, useFullNameBuilder);
             useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //转换为Objcet[]
-            var useToArrayMethod = typeof(List<object>).GetMethod("ToArray");
             useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
-            useIl.Emit(OpCodes.Call, useToArrayMethod);
-            useIl.Emit(OpCodes.Stloc, useLocalArrayObj);
+            useIl.Emit(OpCodes.Ldarg_0);
+            useIl.Emit(OpCodes.Ldfld, useCoreLocationFileBuilder);
+            useIl.Emit(OpCodes.Call, useAddMehtod);
 
-            //唤醒目标方法
-            var useInvokeMethod = typeof(MethodInfo).GetMethod("Invoke", new Type[] { typeof(object), typeof(object[]) });
-            useIl.Emit(OpCodes.Ldloc, useLocalMethodInfo);
-            useIl.Emit(OpCodes.Ldloc, useLocalInstance);
-            useIl.Emit(OpCodes.Ldloc, useLocalArrayObj);
-            useIl.Emit(OpCodes.Call, useInvokeMethod);
-
+            useIl.Emit(OpCodes.Ldloc, useLocalLstObj);
+            useIl.Emit(OpCodes.Call, useMethod);
 
             useIl.Emit(OpCodes.Ret);
+        }
+
+        /// <summary>
+        /// 数据准备
+        /// </summary>
+        private void PrepareType()
+        {
+            //准备特性
+            Type attributeType = typeof(Autodesk.Revit.Attributes.TransactionAttribute);
+
+            Type transactionModeType = typeof(Autodesk.Revit.Attributes.TransactionMode);
+
+            object useTransactionMode = Autodesk.Revit.Attributes.TransactionMode.Manual;
+
+            //初始化字段请求
+            m_lstDefualtFiled = new List<FiledMakeRequest>();
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strId });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = FullClassName });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = UseLocation });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strUseCoreLocation });
+
+            //初始化特性请求
+            m_lstUseAttribute = new List<CustomAttributeBuilder>();
+
+            //使用的特性构造方法
+            var useAttributeConstr = attributeType.GetConstructor(new Type[] { transactionModeType });
+
+            m_lstUseAttribute.Add(new CustomAttributeBuilder(useAttributeConstr, new object[] { 1 }));
+
+
+            //准备接口类型列表
+            m_lstInterfaceType = new List<Type>();
+
+            m_lstMethodRequest = new List<MethodRequest>();
+
+            //使用的基类
+            m_baseType = typeof(BaseInvokeClass);
+
+            //接口方法
+            MethodInfo useInterfaceMethodInfo = m_baseType.GetMethod(m_strInterfaceMethodName);
+
+            //准备方法Bean
+            MethodRequest tempMethodRequest = new MethodRequest();
+            tempMethodRequest.Name = m_strInterfaceMethodName;
+            tempMethodRequest.ReturnType = useInterfaceMethodInfo.ReturnType;
+            tempMethodRequest.ParameterTypes = (from n in useInterfaceMethodInfo.GetParameters() select n.ParameterType).ToArray();
+            tempMethodRequest.UseBaseMethod = useInterfaceMethodInfo;
+            tempMethodRequest.UseMethodDel = new MethodCreatDel(UseReflectMethodCreated);
+            m_lstMethodRequest.Add(tempMethodRequest);
+
         }
     }
 }

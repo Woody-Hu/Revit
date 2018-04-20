@@ -12,7 +12,7 @@ namespace RibbonItemEmitService
     /// <summary>
     /// 程序集制作工具
     /// </summary>
-    public class AssemblyMakeUtility
+    internal class AssemblyMakeUtility
     {
         /// <summary>
         /// 使用的程序集创造器
@@ -42,7 +42,7 @@ namespace RibbonItemEmitService
         /// <summary>
         /// 使用的类型基础名
         /// </summary>
-        private const string m_useClassName = "CMDClass";
+        private const string m_useClassName = "CMDSPACE.CMDClass";
 
         /// <summary>
         /// 使用的射出程序集路径
@@ -54,16 +54,11 @@ namespace RibbonItemEmitService
         /// </summary>
         private int m_useNowIndex = 0;
 
-        /// <summary>
-        /// 构造程序集(利用反射）
-        /// </summary>
-        /// <param name="inputAssemblyName"></param>
-        internal AssemblyMakeUtility(string inputAssemblyName,string inputAPIUILocation, string inputAPILocation, string inputLocation = null)
+        public AssemblyMakeUtility(string inputAssemblyName)
         {
             m_useAssemblyName = inputAssemblyName;
             m_UseAssemblyReqeuest = new AssemblyMakeRequest();
             m_UseAssemblyReqeuest.AssemblyName = m_useAssemblyName;
-            m_UseAssemblyReqeuest.UseLocation = inputLocation;
             m_UseAssemblyReqeuest.LstUseTypeMakeRequest = new List<TypeMakeRequest>();
 
             Assembly nowAssembly = Assembly.GetExecutingAssembly();
@@ -74,32 +69,6 @@ namespace RibbonItemEmitService
 
             m_useFilePath = useFileInfo.FullName;
 
-            m_UseTypeRequestUtiltiy = new MakeTypReuestUtility(inputAPIUILocation, inputAPILocation);
-
-        }
-
-        public AssemblyMakeUtility(string inputAssemblyName,string inputLocation = null)
-        {
-            m_useAssemblyName = inputAssemblyName;
-            m_UseAssemblyReqeuest = new AssemblyMakeRequest();
-            m_UseAssemblyReqeuest.AssemblyName = m_useAssemblyName;
-            m_UseAssemblyReqeuest.UseLocation = inputLocation;
-            m_UseAssemblyReqeuest.LstUseTypeMakeRequest = new List<TypeMakeRequest>();
-
-            m_useFilePath = inputLocation;
-
-            if (string.IsNullOrWhiteSpace(m_useFilePath))
-            {
-                Assembly nowAssembly = Assembly.GetExecutingAssembly();
-
-                FileInfo nowFileInfo = new FileInfo(nowAssembly.Location);
-
-                FileInfo useFileInfo = new FileInfo(nowFileInfo.Directory.FullName + @"\" + m_useAssemblyName + m_appendDllFileName);
-
-                m_useFilePath = useFileInfo.FullName;
-            }
-
-           
             m_UseTypeRequestUtiltiy = new MakeTypReuestUtility();
         }
 
@@ -109,7 +78,7 @@ namespace RibbonItemEmitService
         /// <param name="inputFullClassName"></param>
         /// <param name="inputLocation"></param>
         /// <param name="inputUseCoreLocation"></param>
-        public void AppendTypeRequest(string inputFullClassName, string inputLocation, string inputUseCoreLocation,out string proxyLocation,out string proxyFullName)
+        internal void AppendTypeRequest(string inputFullClassName, string inputLocation, string inputUseCoreLocation,out string proxyLocation,out string proxyFullName)
         {
             m_useNowIndex++;
             string useTypeName = m_useClassName + m_useNowIndex.ToString();
@@ -121,12 +90,12 @@ namespace RibbonItemEmitService
             proxyLocation = m_useFilePath;
             proxyFullName = useTypeName;
         }
-        
+
         /// <summary>
         /// 制作程序集
         /// </summary>
         /// <returns></returns>
-        public string MakeAssembly()
+        internal string MakeAssembly()
         {
             var returnRespond = m_UseCreater.CreatOneAssembly(m_UseAssemblyReqeuest);
 

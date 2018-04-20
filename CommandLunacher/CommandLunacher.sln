@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmitUtility", "EmitUtility\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RibbonItemEmitService", "RibbonItemEmitService\RibbonItemEmitService.csproj", "{3F035A18-D899-4407-A070-BAD65E0E4E81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvokeUtility", "InvokeUtility\InvokeUtility.csproj", "{67AF08A6-0492-4ECF-88B6-6168EEA3E49D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3F035A18-D899-4407-A070-BAD65E0E4E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F035A18-D899-4407-A070-BAD65E0E4E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F035A18-D899-4407-A070-BAD65E0E4E81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67AF08A6-0492-4ECF-88B6-6168EEA3E49D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67AF08A6-0492-4ECF-88B6-6168EEA3E49D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67AF08A6-0492-4ECF-88B6-6168EEA3E49D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67AF08A6-0492-4ECF-88B6-6168EEA3E49D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
