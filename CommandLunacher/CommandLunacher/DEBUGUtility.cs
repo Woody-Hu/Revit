@@ -64,6 +64,11 @@ namespace CommandLunacher
         private static Dictionary<int, string> m_useApplicationIdAndPathDic = new Dictionary<int, string>();
 
         /// <summary>
+        /// 不进行Debug模式的App程序集文件名称列表
+        /// </summary>
+        private static HashSet<string> m_NoneDebugNameSet = new HashSet<string>();
+
+        /// <summary>
         /// 当前的Application索引
         /// </summary>
         private static int? m_nowApplicationIndex = null;
@@ -230,6 +235,7 @@ namespace CommandLunacher
                 return inputPath;
             }
 
+
             //参数保护
             int saveParentLevel = Math.Abs(m_saveParentLevel);
 
@@ -304,6 +310,18 @@ namespace CommandLunacher
             if (!string.IsNullOrWhiteSpace(inputPath) && !m_useApplicationIdAndPathDic.ContainsKey(inputIndex))
             {
                 m_useApplicationIdAndPathDic.Add(inputIndex, inputPath);
+            }
+
+            //获得索引对应的路径
+            var usePath = m_useApplicationIdAndPathDic[inputIndex];
+
+            var useFileInfo = new FileInfo(usePath);
+
+            //当Debug模式 且文件名是非Debug文件名时
+            if ( null != m_nowGuid && !string.IsNullOrWhiteSpace(usePath) && m_NoneDebugNameSet.Contains(useFileInfo.Name))
+            {
+                //临时关闭当前Guid 临时关闭Debug模式功能
+                m_nowGuid = m_nowGuid = null;
             }
         }
 

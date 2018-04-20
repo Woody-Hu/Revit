@@ -125,7 +125,7 @@ namespace CommandLunacher
             //获得请求程序集
             var wantAssemblyName = inputEventArgs.Name.Split(',')[0];
 
-
+            //转换请求文件路径
             FileInfo useFileInfo = new FileInfo(DEBUGUtility.ResetApplicationLocation(inputEventArgs.RequestingAssembly.Location));
 
             //文件名转换
