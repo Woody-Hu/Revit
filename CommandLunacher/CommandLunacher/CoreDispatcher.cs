@@ -162,6 +162,11 @@ namespace CommandLunacher
         /// <returns></returns>
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            //检查版本号
+            if (string.IsNullOrWhiteSpace(AssemblyLoadUtility.m_versionNum))
+            {
+                AssemblyLoadUtility.m_versionNum = commandData.Application.Application.VersionNumber;
+            }
             return InvokeHandler(commandData, ref message, elements);
         }
 
@@ -178,6 +183,12 @@ namespace CommandLunacher
         public Result ExecuteByAppendValue(ExternalCommandData commandData, ref string message, ElementSet elements
             , string useGuid, string useAssemblyLocation, string useClassFullName)
         {
+            //检查版本号
+            if (string.IsNullOrWhiteSpace(AssemblyLoadUtility.m_versionNum))
+            {
+                AssemblyLoadUtility.m_versionNum = commandData.Application.Application.VersionNumber;
+            }
+
             //检查命令是否被创建
             if (!m_useCMDDic.ContainsKey(useGuid))
             {

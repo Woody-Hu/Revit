@@ -124,6 +124,7 @@ namespace RibbonItemEmitService
         /// <returns></returns>
         internal TypeMakeRequest MakeTypeRequest(string inputTypeName, string inputFullClassName,string inputLocation,string inputUseCoreLocation)
         {
+            PrepareFiled();
             TypeMakeRequest returnValue = new TypeMakeRequest();
 
             returnValue.TypeName = inputTypeName;
@@ -228,12 +229,7 @@ namespace RibbonItemEmitService
 
             object useTransactionMode = Autodesk.Revit.Attributes.TransactionMode.Manual;
 
-            //初始化字段请求
-            m_lstDefualtFiled = new List<FiledMakeRequest>();
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strId });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = FullClassName });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = UseLocation });
-            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strUseCoreLocation });
+            PrepareFiled();
 
             //初始化特性请求
             m_lstUseAttribute = new List<CustomAttributeBuilder>();
@@ -264,6 +260,19 @@ namespace RibbonItemEmitService
             tempMethodRequest.UseMethodDel = new MethodCreatDel(UseReflectMethodCreated);
             m_lstMethodRequest.Add(tempMethodRequest);
 
+        }
+
+        /// <summary>
+        /// 准备字段
+        /// </summary>
+        private void PrepareFiled()
+        {
+            //初始化字段请求
+            m_lstDefualtFiled = new List<FiledMakeRequest>();
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strId });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = FullClassName });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = UseLocation });
+            m_lstDefualtFiled.Add(new StringFiledMakeRequest() { FiledName = m_strUseCoreLocation });
         }
     }
 }
