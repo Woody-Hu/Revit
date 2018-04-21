@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace CommandLunacher
 {
@@ -14,40 +15,11 @@ namespace CommandLunacher
     internal class DynamicEventhanlder
     {
         #region 私有字段
-        /// <summary>
-        /// 使用的程序集名称
-        /// </summary>
-        private const string m_strUseAssemblyName = "DynamicEvenhanlderAssembly";
-
-        /// <summary>
-        /// 使用的类型基础名
-        /// </summary>
-        private const string m_strBaseClassName = "EventHalderSpace.Hanlder";
-
-        /// <summary>
-        /// 当前使用的索引
-        /// </summary>
-        private int m_useIndex = 0;
-
-        /// <summary>
-        /// 使用的方法名
-        /// </summary>
-        private const string m_strUseMethodName = "UseMethod";
 
         /// <summary>
         /// 使用的Invoke方法名
         /// </summary>
         private const string m_strUseInvoke = "Invoke";
-
-        /// <summary>
-        /// 使用的动态程序集
-        /// </summary>
-        private AssemblyBuilder m_useAssemblyBuilder = null;
-
-        /// <summary>
-        /// 使用的动态模块
-        /// </summary>
-        private ModuleBuilder m_useModuleBuilder = null;
 
         /// <summary>
         /// 使用的单例标签
@@ -89,11 +61,6 @@ namespace CommandLunacher
         /// </summary>
         private DynamicEventhanlder()
         {
-            //预定义程序集与模块
-            m_useAssemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(m_strUseAssemblyName) , AssemblyBuilderAccess.Run);
-
-            m_useModuleBuilder = m_useAssemblyBuilder.DefineDynamicModule(m_strUseAssemblyName);
-
             Type useType = typeof(DynamicEventhanlder);
 
             //获取挂接程序集方法
@@ -147,57 +114,29 @@ namespace CommandLunacher
         /// <param name="invokeMethod">委托对应的方法签名</param>
         private void AddEventHanlderToObj(object inputObject, bool ifAdd, EventInfo oneEventInfo, Type handlerType, MethodInfo invokeMethod)
         {
-            ParameterInfo[] parms = invokeMethod.GetParameters();
-            Type[] parmTypes = new Type[parms.Length];
-            for (int i = 0; i < parms.Length; i++)
-            {
-                parmTypes[i] = parms[i].ParameterType;
-            }
-
-            //序号增加
-            m_useIndex++;
-
-            var useStr = m_strBaseClassName + m_useIndex.ToString();
-
-            //类型创建器
-            var tempTypeBuilder = m_useModuleBuilder.DefineType(useStr, TypeAttributes.Public | TypeAttributes.Class);
-
-            //定义方法签名
-            var useMethodBuilder = tempTypeBuilder.DefineMethod
-                (m_strUseMethodName, MethodAttributes.Public | MethodAttributes.Static, invokeMethod.ReturnType, parmTypes);
-
-            var useIl = useMethodBuilder.GetILGenerator();
-
-            //挂接移除事件
+            //获取委托
+            Delegate usedel;
             if (ifAdd)
             {
-                useIl.Emit(OpCodes.Call, m_addAssemblyMethod);
+                //获取委托
+                usedel = Delegate.CreateDelegate(handlerType, m_addAssemblyMethod);
             }
             else
             {
-                useIl.Emit(OpCodes.Call, m_removeAseemblyMethod);
+                //获取委托
+                usedel = Delegate.CreateDelegate(handlerType, m_removeAseemblyMethod);
             }
 
-            useIl.Emit(OpCodes.Ret);
-
-            //生成类型
-            var createdType = tempTypeBuilder.CreateType();
-
-            //获取生成的方法
-            var createdMethod = createdType.GetMethod(m_strUseMethodName);
-
-            //获取委托
-            Delegate usedel = Delegate.CreateDelegate(handlerType, createdMethod);
-
-            //添加委托进事件
             oneEventInfo.AddEventHandler(inputObject, usedel);
         }
+
+
 
         #region 反射调用方法
         /// <summary>
         /// 添加Assembly解析事件
         /// </summary>
-        public static void AddAssemblyLoad()
+        public static void AddAssemblyLoad(Object obj, EventArgs args)
         {
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyLoadUtility.NoneDebugLoadAssembly;
         }
@@ -205,7 +144,7 @@ namespace CommandLunacher
         /// <summary>
         /// 一次Assembly解析事件
         /// </summary>
-        public static void RemoveAssemblyLoad()
+        public static void RemoveAssemblyLoad(Object obj, EventArgs args)
         {
             AppDomain.CurrentDomain.AssemblyResolve -= AssemblyLoadUtility.NoneDebugLoadAssembly;
         } 
