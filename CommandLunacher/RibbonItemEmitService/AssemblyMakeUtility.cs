@@ -54,20 +54,28 @@ namespace RibbonItemEmitService
         /// </summary>
         private int m_useNowIndex = 0;
 
-        public AssemblyMakeUtility(string inputAssemblyName)
+        public AssemblyMakeUtility(string inputAssemblyName,string inputDir = null)
         {
             m_useAssemblyName = inputAssemblyName;
             m_UseAssemblyReqeuest = new AssemblyMakeRequest();
             m_UseAssemblyReqeuest.AssemblyName = m_useAssemblyName;
             m_UseAssemblyReqeuest.LstUseTypeMakeRequest = new List<TypeMakeRequest>();
 
-            Assembly nowAssembly = Assembly.GetExecutingAssembly();
+            if (string.IsNullOrWhiteSpace(inputDir))
+            {
+                Assembly nowAssembly = Assembly.GetExecutingAssembly();
 
-            FileInfo nowFileInfo = new FileInfo(nowAssembly.Location);
+                FileInfo nowFileInfo = new FileInfo(nowAssembly.Location);
 
-            FileInfo useFileInfo = new FileInfo(nowFileInfo.Directory.FullName + @"\" + m_useAssemblyName + m_appendDllFileName);
+                FileInfo useFileInfo = new FileInfo(nowFileInfo.Directory.FullName + @"\" + m_useAssemblyName + m_appendDllFileName);
 
-            m_useFilePath = useFileInfo.FullName;
+                m_useFilePath = useFileInfo.FullName;
+            }
+            else
+            {
+                m_useFilePath = inputDir + @"\" + m_useAssemblyName + m_appendDllFileName;
+            }
+        
 
             m_UseTypeRequestUtiltiy = new MakeTypReuestUtility();
         }

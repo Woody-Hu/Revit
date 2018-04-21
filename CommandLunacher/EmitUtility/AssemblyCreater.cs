@@ -39,7 +39,7 @@ namespace EmitUtility
             }
 
             AssemblyRespondBean respond = new AssemblyRespondBean();
-            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName);
+            var tempAssemblyBuilder = GetAssemblyBuilder(inputRequest.AssemblyName,inputRequest.AssemblyDir);
 
             var tempModuleBuilder = GetModuleBuilder(tempAssemblyBuilder, inputRequest.AssemblyName);
 
@@ -91,7 +91,7 @@ namespace EmitUtility
         /// </summary>
         /// <param name="inputName"></param>
         /// <returns></returns>
-        private AssemblyBuilder GetAssemblyBuilder(string inputName)
+        private AssemblyBuilder GetAssemblyBuilder(string inputName,string inputDir)
         {
 
             AssemblyName useAssemblyName = new AssemblyName(inputName);
@@ -102,9 +102,19 @@ namespace EmitUtility
 
             FileInfo useFileInfo = new FileInfo(nowAssembly.Location);
 
+            AssemblyBuilder tempBuilder;
 
-            var tempBuilder = useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave,
-                useFileInfo.Directory.FullName);
+            if (string.IsNullOrWhiteSpace(inputDir))
+            {
+                tempBuilder = useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave,
+       useFileInfo.Directory.FullName);
+            }
+            else
+            {
+                tempBuilder = useAppDomain.DefineDynamicAssembly(useAssemblyName, AssemblyBuilderAccess.RunAndSave,
+    inputDir);
+            }
+   
 
             return tempBuilder;
 

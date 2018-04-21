@@ -99,7 +99,7 @@ namespace RibbonItemEmitService
 
                 IfAssemblyExist = false;
                 //创造程序集工具
-                m_useAssemblyMakeUtility = new AssemblyMakeUtility(m_inputName);
+                m_useAssemblyMakeUtility = new AssemblyMakeUtility(m_inputName, m_inputDir);
                 //判断路径与创建
                 var useDirection = useFileInfo.Directory;
                 if (!useDirection.Exists)
