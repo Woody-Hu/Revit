@@ -51,6 +51,7 @@
     <Compile Include="CoreDispatcher.cs" />
     <Compile Include="DEBUGUtility.cs" />
     <Compile Include="DispatcherProxy.cs" />
+    <Compile Include="DynamicEventhanlder.cs" />
     <Compile Include="HandlerInfoPacker.cs" />
     <Compile Include="ICoreDisparcher.cs" />
     <Compile Include="IRevitFunction.cs" />

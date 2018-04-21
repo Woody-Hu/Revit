@@ -9,8 +9,16 @@ using System.Xml;
 
 namespace CommandLunacher
 {
+    /// <summary>
+    /// 程序集加载工具
+    /// </summary>
     internal static class AssemblyLoadUtility
     {
+        #region 私有字段
+
+        /// <summary>
+        /// 程序集地址缓存
+        /// </summary>
         private static Dictionary<string, Assembly> m_dicPathAssembly = new Dictionary<string, Assembly>();
 
         /// <summary>
@@ -46,7 +54,8 @@ namespace CommandLunacher
         /// <summary>
         /// 程序集与文件不同名时的映射配置
         /// </summary>
-        private static Dictionary<string, string> m_AssemblyNameAndFileNameMap = new Dictionary<string, string>();
+        private static Dictionary<string, string> m_AssemblyNameAndFileNameMap = new Dictionary<string, string>(); 
+        #endregion
 
         /// <summary>
         /// 版本信息
@@ -102,10 +111,15 @@ namespace CommandLunacher
         /// 程序集加载底层(主动)
         /// </summary>
         /// <param name="inputPath"></param>
+        /// <param name="ifUseDebugUtility"></param>
         /// <returns></returns>
-        internal static Assembly LoadAssembly(string inputPath)
+        internal static Assembly LoadAssembly(string inputPath,bool ifUseDebugUtility = true)
         {
-            inputPath = DEBUGUtility.CopyFileAndChangePath(inputPath);
+            if (ifUseDebugUtility)
+            {
+                inputPath = DEBUGUtility.CopyFileAndChangePath(inputPath);
+            }
+
             if (!m_dicPathAssembly.ContainsKey(inputPath))
             {
                 //目录变更
@@ -121,12 +135,43 @@ namespace CommandLunacher
         /// <param name="inputEventArgs"></param>
         /// <returns></returns>
         internal static Assembly LoadAssembly(ResolveEventArgs inputEventArgs)
-        {           
+        {
+            return UseLoadAssemblyMehtod(inputEventArgs);
+        }
+
+        /// <summary>
+        /// 非Debug模式加载
+        /// </summary>
+        /// <param name="inputEventArgs"></param>
+        /// <returns></returns>
+        internal static Assembly NoneDebugLoadAssembly(object sender, ResolveEventArgs inputEventArgs)
+        {
+            return UseLoadAssemblyMehtod(inputEventArgs,false);
+        }
+
+        /// <summary>
+        /// 程序集加载底层方法
+        /// </summary>
+        /// <param name="inputEventArgs"></param>
+        /// <param name="ifUseDebug"></param>
+        /// <returns></returns>
+        private static Assembly UseLoadAssemblyMehtod(ResolveEventArgs inputEventArgs, bool ifUseDebug = true)
+        {
             //获得请求程序集
             var wantAssemblyName = inputEventArgs.Name.Split(',')[0];
 
             //转换请求文件路径
-            FileInfo useFileInfo = new FileInfo(DEBUGUtility.ResetApplicationLocation(inputEventArgs.RequestingAssembly.Location));
+            FileInfo useFileInfo;
+
+            if (ifUseDebug)
+            {
+                useFileInfo = new FileInfo(DEBUGUtility.ResetApplicationLocation(inputEventArgs.RequestingAssembly.Location));
+            }
+            else
+            {
+                useFileInfo = new FileInfo(inputEventArgs.RequestingAssembly.Location);
+            }
+
 
             //文件名转换
             string wantAssemblyFileName = wantAssemblyName;
@@ -150,14 +195,17 @@ namespace CommandLunacher
 
             //程序集与文件不同名时更改路径名称
 
-            
-            //目录变更设置
-            usePath = DEBUGUtility.CopyFileAndChangePath(usePath);
+            if (ifUseDebug)
+            {
+                //目录变更设置
+                usePath = DEBUGUtility.CopyFileAndChangePath(usePath);
+            }
+
+
 
             //加载
-            return LoadAssembly(usePath);
+            return LoadAssembly(usePath, ifUseDebug);
         }
-
 
     }
 }

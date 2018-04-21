@@ -57,6 +57,12 @@ namespace CommandLunacher
         {
             var returnValue = m_useCoreDispatcher.OnStartup(application);
 
+            var useHanlder = DynamicEventhanlder.GetHanlder();
+
+            //向两种应用程序的事件动态挂接程序集解析事件
+            useHanlder.LinkEventHanlderToObject(application, true);
+            useHanlder.LinkEventHanlderToObject(application.ControlledApplication, true);
+
             var applicationCount = m_useCoreDispatcher.ApplicationCount();
 
             //循环启动
@@ -64,6 +70,10 @@ namespace CommandLunacher
             {
                 m_useCoreDispatcher.StartUpOneApplication(tempIndex, application);
             }
+
+            //动态加入程序集解析移除事件
+            useHanlder.LinkEventHanlderToObject(application.ControlledApplication, false);
+            useHanlder.LinkEventHanlderToObject(application, false);
 
             return returnValue;
         }
