@@ -69,6 +69,11 @@ namespace CommandLunacher
         private static HashSet<string> m_NoneDebugNameSet = new HashSet<string>();
 
         /// <summary>
+        /// 是否对Application进行Debug模式
+        /// </summary>
+        private static bool m_bIfDebugApplication = true;
+
+        /// <summary>
         /// 当前的Application索引
         /// </summary>
         private static int? m_nowApplicationIndex = null;
@@ -321,7 +326,14 @@ namespace CommandLunacher
             if ( null != m_nowGuid && !string.IsNullOrWhiteSpace(usePath) && m_NoneDebugNameSet.Contains(useFileInfo.Name))
             {
                 //临时关闭当前Guid 临时关闭Debug模式功能
-                m_nowGuid = m_nowGuid = null;
+                m_nowGuid = null;
+            }
+
+            //若Application全不进行Debug模式
+            if (!m_bIfDebugApplication)
+            {
+                //临时关闭Debug功能
+                m_nowGuid = null;
             }
         }
 
