@@ -64,11 +64,6 @@ namespace CommandLunacher
         private static Dictionary<int, string> m_useApplicationIdAndPathDic = new Dictionary<int, string>();
 
         /// <summary>
-        /// 不进行Debug模式的App程序集文件名称列表
-        /// </summary>
-        private static HashSet<string> m_NoneDebugNameSet = new HashSet<string>();
-
-        /// <summary>
         /// 是否对Application进行Debug模式
         /// </summary>
         private static bool m_bIfDebugApplication = true;
@@ -97,6 +92,11 @@ namespace CommandLunacher
         /// 当前使用的Assembly临时目录对象
         /// </summary>
         private static DirectoryInfo nowUseAssemblyDirectory = null;
+
+        /// <summary>
+        /// 不使用debug模式的程序集程序列表
+        /// </summary>
+        private static HashSet<string> nowUseNoneDebugAssemblyLocation = new HashSet<string>();
 
         /// <summary>
         /// 配置文件名称
@@ -234,9 +234,20 @@ namespace CommandLunacher
         /// <returns></returns>
         internal static string CopyFileAndChangePath(string inputPath)
         {
+            //若在无需转换列表中
+            if (nowUseNoneDebugAssemblyLocation.Contains(inputPath))
+            {
+                return inputPath;
+            }
+
             //无需创建
             if (null == m_nowGuid)
             {
+                //若是Debug模式但无需Debug转换则记录到Set中
+                if (IfDebugModel && !nowUseNoneDebugAssemblyLocation.Contains(inputPath))
+                {
+                    nowUseNoneDebugAssemblyLocation.Add(inputPath);
+                }
                 return inputPath;
             }
 
@@ -315,18 +326,6 @@ namespace CommandLunacher
             if (!string.IsNullOrWhiteSpace(inputPath) && !m_useApplicationIdAndPathDic.ContainsKey(inputIndex))
             {
                 m_useApplicationIdAndPathDic.Add(inputIndex, inputPath);
-            }
-
-            //获得索引对应的路径
-            var usePath = m_useApplicationIdAndPathDic[inputIndex];
-
-            var useFileInfo = new FileInfo(usePath);
-
-            //当Debug模式 且文件名是非Debug文件名时
-            if ( null != m_nowGuid && !string.IsNullOrWhiteSpace(usePath) && m_NoneDebugNameSet.Contains(useFileInfo.Name))
-            {
-                //临时关闭当前Guid 临时关闭Debug模式功能
-                m_nowGuid = null;
             }
 
             //若Application全不进行Debug模式
