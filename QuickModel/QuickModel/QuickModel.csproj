@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>QuickModel</RootNamespace>
     <AssemblyName>QuickModel</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -45,15 +46,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseCadElement.cs" />
-    <Compile Include="CurveCadElement.cs" />
-    <Compile Include="LocationKindEnum.cs" />
-    <Compile Include="MultipleCadCurve.cs" />
-    <Compile Include="RevitModelHanlder.cs" />
+    <Compile Include="CadElement\BaseCadLayerElement.cs" />
+    <Compile Include="Attribute\GrouperAttribute.cs" />
+    <Compile Include="Interface\IQuickModel.cs" />
+    <Compile Include="Interface\IResponseHanlder.cs" />
+    <Compile Include="Interface\IUseHandlerName.cs" />
+    <Compile Include="QuickModelFrameWork.cs" />
+    <Compile Include="Attribute\RebuilderAttribute.cs" />
+    <Compile Include="Request\BaseRequest.cs" />
+    <Compile Include="CadElement\BlockCadElement.cs" />
+    <Compile Include="CadElement\CurveCadElement.cs" />
+    <Compile Include="Interface\IDataGrouper.cs" />
+    <Compile Include="CadElement\ICadElement.cs" />
+    <Compile Include="CadElement\IElementInBlock.cs" />
+    <Compile Include="Request\InputRequest.cs" />
+    <Compile Include="Interface\IRequestMaker.cs" />
+    <Compile Include="Request\LocationKindEnum.cs" />
+    <Compile Include="CadElement\MultipleCadElements.cs" />
+    <Compile Include="Interface\IRevitModelRebuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RevitModelRequest.cs" />
-    <Compile Include="TextCadElement.cs" />
+    <Compile Include="Request\RevitModelRequest.cs" />
+    <Compile Include="CadElement\TextCadElement.cs" />
+    <Compile Include="Response\RevitModelRebuildResponse.cs" />
+    <Compile Include="ToleranceManger.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

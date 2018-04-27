@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Autodesk.Revit.DB;
 
 namespace QuickModel
 {
     /// <summary>
-    /// revit模型重建器
+    /// 块中元素接口
     /// </summary>
-    public abstract class RevitModelHanlder
+    interface IElementInBlock
     {
-
-
+        /// <summary>
+        /// 父级块封装（可null）
+        /// </summary>
+        BlockCadElement ParentBlock { set; get; }
     }
 }

@@ -159,6 +159,12 @@ namespace CommandLunacher
         {
             //获得请求程序集
             var wantAssemblyName = inputEventArgs.Name.Split(',')[0];
+            var wantAssemblyCulture = inputEventArgs.Name.Split(',')[2];
+
+            if (wantAssemblyName.EndsWith(".resources") && !wantAssemblyCulture.EndsWith("neutral"))
+            {
+                return null;
+            }
 
             //转换请求文件路径
             FileInfo useFileInfo;
