@@ -261,6 +261,13 @@ namespace CommandLunacher
                 cmdPacker.StrUseAddinId = eachId.InnerText;
                 cmdPacker.StrUseAssemblePath = eachId.Attributes[ASSEMBLEPATH].Value;
                 cmdPacker.StrUseClassFullName = eachId.Attributes[CLASSFULLNAME].Value;
+
+                //若文件不存在则跳过
+                if (!File.Exists(cmdPacker.StrUseAssemblePath))
+                {
+                    continue;
+                }
+
                 lstTempPacker.Add(cmdPacker);
             }
             return lstTempPacker;
