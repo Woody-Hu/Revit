@@ -9,36 +9,64 @@ using System.Threading.Tasks;
 
 namespace QuickModel
 {
+    /// <summary>
+    /// 翻模命令通用框架
+    /// </summary>
     public class QuickModelFrameWork : IQuickModel
     {
+        #region 私有字段
+        /// <summary>
+        /// 使用的请求制作处理器
+        /// </summary>
         private IRequestMaker m_useRequestMaker;
 
+        /// <summary>
+        /// 分组器类型列表
+        /// </summary>
         private List<Type> m_lstGrouperType;
 
+        /// <summary>
+        /// 重建器类型列表
+        /// </summary>
         private List<Type> m_lstBuilderType;
 
+        /// <summary>
+        /// 使用的响应处理器
+        /// </summary>
         private IResponseHanlder m_useResponseHanlder;
 
+        /// <summary>
+        /// 分组器名称 - 分组器实例映射
+        /// </summary>
         private Dictionary<string, IDataGrouper> m_dicUSeGropuerMap = new Dictionary<string, IDataGrouper>();
 
-        private Dictionary<string, IRevitModelRebuilder> m_dicUseRebuilderMap = new Dictionary<string, IRevitModelRebuilder>();
+        /// <summary>
+        /// 重建器名称 - 重建器实例映射
+        /// </summary>
+        private Dictionary<string, IRevitModelRebuilder> m_dicUseRebuilderMap = new Dictionary<string, IRevitModelRebuilder>(); 
+        #endregion
 
-        public QuickModelFrameWork(IRequestMaker useRequestMaker,IResponseHanlder useResponseHanlder, List<Type> lstInputGrouperType,List<Type> lstInputBuilderType)
+        /// <summary>
+        /// 构造翻模框架
+        /// </summary>
+        /// <param name="useRequestMaker">使用UI层请求制作接口</param>
+        /// <param name="useResponseHanlder">使用的响应处理器</param>
+        public QuickModelFrameWork(IRequestMaker useRequestMaker,IResponseHanlder useResponseHanlder)
         {
             m_useRequestMaker = useRequestMaker;
-            m_lstGrouperType = lstInputGrouperType;
-            m_lstBuilderType = lstInputBuilderType;
+            m_lstGrouperType = GetTypesInAssembly<IDataGrouper>();
+            m_lstBuilderType = GetTypesInAssembly<IRevitModelRebuilder>();
             m_useResponseHanlder = useResponseHanlder;
 
 
-            Type useRebuilderType = typeof(IRevitModelRebuilder);
-
-            PrepareMap<IDataGrouper, GrouperAttribute>(lstInputGrouperType, m_dicUSeGropuerMap);
+            PrepareMap<IDataGrouper, GrouperAttribute>(m_lstGrouperType, m_dicUSeGropuerMap);
             PrepareMap<IRevitModelRebuilder, RebuilderAttribute>(m_lstBuilderType, m_dicUseRebuilderMap);
         }
 
-     
-
+        /// <summary>
+        /// 翻模执行
+        /// </summary>
+        /// <param name="inputCommandData"></param>
         public void Excute(Autodesk.Revit.UI.ExternalCommandData inputCommandData)
         {
             Document useDoc = inputCommandData.Application.ActiveUIDocument.Document;
@@ -79,6 +107,22 @@ namespace QuickModel
             }
 
             return;
+        }
+
+        /// <summary>
+        /// 获取当前程序集中指定泛型的派生类型
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        private List<Type> GetTypesInAssembly<T>()
+        {
+            //获取当前程序集
+            Assembly useAssembly = Assembly.GetExecutingAssembly();
+            Type baseType = typeof(T);
+
+            var types = from n in useAssembly.GetTypes() where baseType.IsAssignableFrom(n) select n;
+
+            return types.ToList();
         }
 
         /// <summary>

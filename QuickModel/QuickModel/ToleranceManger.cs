@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace QuickModel
 {
@@ -19,7 +21,12 @@ namespace QuickModel
         /// <summary>
         /// 使用的缓存字典
         /// </summary>
-        private Dictionary<string, double> m_useDic = new Dictionary<string, double>();
+        private ToleranceDic m_useDic = null;
+
+        /// <summary>
+        /// 使用的默认路径
+        /// </summary>
+        private static string m_usePath = @"C:\tolerance.xml";
 
         /// <summary>
         /// 私有构造从文件中加载
@@ -101,8 +108,24 @@ namespace QuickModel
         /// </summary>
         private void LoadFromFile()
         {
-            //待实现
-            throw new NotImplementedException();
+            if (File.Exists(m_usePath))
+            {
+                try
+                {
+                    XmlSerializer useXmlSercializer = new XmlSerializer(typeof(ToleranceDic));
+                    m_useDic = useXmlSercializer.Deserialize(File.Open(m_usePath, FileMode.Open)) as ToleranceDic;
+                }
+                catch (Exception)
+                {
+                    m_useDic = null;
+                }
+
+            }
+
+            if (null == m_useDic)
+            {
+                m_useDic = new ToleranceDic();
+            }
         }
 
         /// <summary>
@@ -110,8 +133,20 @@ namespace QuickModel
         /// </summary>
         private void SaveToFile()
         {
-            //待实现
-            throw new NotImplementedException();
+            try
+            {
+                if (File.Exists(m_usePath))
+                {
+                    File.Delete(m_usePath);
+                }
+
+                XmlSerializer useXmlSercializer = new XmlSerializer(typeof(ToleranceDic));
+                useXmlSercializer.Serialize(File.Create(m_usePath), m_useDic);
+            }
+            catch (Exception)
+            {
+                ;
+            }
         }
     }
 }

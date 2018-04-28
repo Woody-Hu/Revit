@@ -68,6 +68,7 @@
     <Compile Include="Request\RevitModelRequest.cs" />
     <Compile Include="CadElement\TextCadElement.cs" />
     <Compile Include="Response\RevitModelRebuildResponse.cs" />
+    <Compile Include="ToleranceDic.cs" />
     <Compile Include="ToleranceManger.cs" />
   </ItemGroup>
   <ItemGroup />
