@@ -31,7 +31,6 @@ namespace QuickModel
             m_useResponseHanlder = useResponseHanlder;
 
 
-
             Type useRebuilderType = typeof(IRevitModelRebuilder);
 
             PrepareMap<IDataGrouper, GrouperAttribute>(lstInputGrouperType, m_dicUSeGropuerMap);
@@ -46,6 +45,12 @@ namespace QuickModel
 
             //利用UI准备请求
             m_useRequestMaker.PrepareRequest();
+
+            //若存在响应处理器
+            if (null != m_useResponseHanlder)
+            {
+                m_useResponseHanlder.AddStartTime(DateTime.Now);
+            }
 
             //获得请求封装
             var lstInputRequest = m_useRequestMaker.GetAllInputRequest();
@@ -62,6 +67,7 @@ namespace QuickModel
             //若存在响应处理器
             if (null != m_useResponseHanlder)
             {
+                m_useResponseHanlder.AddEndTime(DateTime.Now);
                 //注册响应
                 foreach (var oneResponse in lstUseResponse)
                 {
