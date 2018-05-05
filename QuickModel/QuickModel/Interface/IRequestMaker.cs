@@ -18,6 +18,14 @@ namespace QuickModel
         List<InputRequest> GetAllInputRequest();
 
         /// <summary>
+        /// 是否Break循环
+        /// </summary>
+        bool IfBreak
+        {
+            get;
+        }
+
+        /// <summary>
         /// 准备请求
         /// </summary>
         void PrepareRequest();

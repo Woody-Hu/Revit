@@ -71,8 +71,61 @@ namespace QuickModel
         {
             Document useDoc = inputCommandData.Application.ActiveUIDocument.Document;
 
-            //利用UI准备请求
-            m_useRequestMaker.PrepareRequest();
+            WorkHanlder(inputCommandData, useDoc);
+
+            return;
+        }
+
+        /// <summary>
+        /// 循环翻模执行
+        /// </summary>
+        /// <param name="inputCommandData"></param>
+        public void ExcuteWithWhile(Autodesk.Revit.UI.ExternalCommandData inputCommandData)
+        {
+            Document useDoc = inputCommandData.Application.ActiveUIDocument.Document;
+
+            while (true)
+            {
+                try
+                {
+                    WorkHanlder(inputCommandData, useDoc);
+                }
+                catch (Autodesk.Revit.Exceptions.OperationCanceledException )
+                {
+                    //若需中断
+                    if (m_useRequestMaker.IfBreak)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return;
+        }
+
+        /// <summary>
+        /// 处理方法
+        /// </summary>
+        /// <param name="inputCommandData"></param>
+        /// <param name="useDoc"></param>
+        private void WorkHanlder(Autodesk.Revit.UI.ExternalCommandData inputCommandData, Document useDoc)
+        {
+            //Ui层事务组
+            using (TransactionGroup useGroup = new TransactionGroup(useDoc, "uiGroup"))
+            {
+                try
+                {
+                    useGroup.Start();
+                    //利用UI准备请求
+                    m_useRequestMaker.PrepareRequest();
+                    useGroup.Assimilate();
+                }
+                catch (Exception ex)
+                {
+                    useGroup.RollBack();
+                    throw ex;
+                }
+            }
 
             //若存在响应处理器
             if (null != m_useResponseHanlder)
@@ -105,8 +158,6 @@ namespace QuickModel
                 //处理响应
                 m_useResponseHanlder.HanlderResponse();
             }
-
-            return;
         }
 
         /// <summary>
@@ -180,11 +231,11 @@ namespace QuickModel
         /// <param name="lstUseResponse"></param>
         private void ReBuild(Document useDoc, List<RevitModelRequest> lstRevitModelRequest, List<RevitModelRebuildResponse> lstUseResponse)
         {
-            Transaction useTransaction = new Transaction(useDoc, "quickModel");
+            TransactionGroup useTransactionGroup = new TransactionGroup(useDoc, "quickModel");
 
             try
             {
-                useTransaction.Start();
+                useTransactionGroup.Start();
 
                 foreach (var oneRebuildeRequest in lstRevitModelRequest)
                 {
@@ -208,11 +259,11 @@ namespace QuickModel
                     }
                     lstUseResponse.Add(tempResponse);
                 }
-                useTransaction.Commit();
+                useTransactionGroup.Assimilate();
             }
             catch (Exception)
             {
-                useTransaction.RollBack();
+                useTransactionGroup.RollBack();
 
                 //响应回置
                 foreach (var oneResponse in lstUseResponse)
