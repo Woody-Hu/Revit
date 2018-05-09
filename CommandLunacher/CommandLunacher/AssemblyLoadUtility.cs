@@ -157,13 +157,20 @@ namespace CommandLunacher
         /// <returns></returns>
         private static Assembly UseLoadAssemblyMehtod(ResolveEventArgs inputEventArgs, bool ifUseDebug = true)
         {
-            //获得请求程序集
-            var wantAssemblyName = inputEventArgs.Name.Split(',')[0];
-            var wantAssemblyCulture = inputEventArgs.Name.Split(',')[2];
 
-            if (wantAssemblyName.EndsWith(".resources") && !wantAssemblyCulture.EndsWith("neutral"))
+            var allNames = inputEventArgs.Name.Split(',');
+            //获得请求程序集
+            var wantAssemblyName = allNames[0];
+
+            if (allNames.Count() > 2)
             {
-                return null;
+
+                var wantAssemblyCulture = inputEventArgs.Name.Split(',')[2];
+
+                if (wantAssemblyName.EndsWith(".resources") && !wantAssemblyCulture.EndsWith("neutral"))
+                {
+                    return null;
+                }
             }
 
             //转换请求文件路径
